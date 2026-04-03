@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>토니킹님의 주식 브리핑</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;}
+  .app{max-width:860px;margin:0 auto;padding:1rem;}
+  .header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;background:#fff;border:1px solid #e5e5e5;border-radius:14px;margin-bottom:1rem;box-shadow:0 1px 4px rgba(0,0,0,0.06);}
+  .header h1{font-size:18px;font-weight:600;color:#1a1a1a;}
+  .header p{font-size:12px;color:#888;margin-top:2px;}
+  .time-badge{font-size:12px;font-weight:500;background:#e8f0fe;color:#1a56db;padding:5px 12px;border-radius:20px;}
+  .tabs{display:flex;gap:6px;margin-bottom:1rem;background:#ebebeb;padding:4px;border-radius:10px;}
+  .tab{flex:1;padding:8px;font-size:13px;font-weight:500;border:none;background:transparent;color:#888;border-radius:8px;cursor:pointer;}
+  .tab.active{background:#fff;color:#1a1a1a;box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+  .panel{display:none;}.panel.active{display:block;}
+  .sec-label{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+  .market-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem;}
+  .mcard{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:12px;text-align:center;}
+  .mcard .ml{font-size:11px;color:#888;margin-bottom:4px;}
+  .mcard .mv{font-size:15px;font-weight:600;color:#1a1a1a;}
+  .mcard .mc{font-size:11px;margin-top:2px;}
+  .up{color:#e03131;}.dn{color:#1971c2;}
+  .sec{background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:1rem 1.25rem;margin-bottom:1rem;}
+  .stock-item{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0;gap:10px;}
+  .stock-item:last-child{border-bottom:none;}
+  .sicon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;}
+  .sname{flex:1;}
+  .sname .kn{font-size:13px;font-weight:600;color:#1a1a1a;}
+  .sname .sc{font-size:11px;color:#888;margin-top:2px;}
+  .signal{font-size:10px;padding:2px 7px;border-radius:20px;margin-left:6px;font-weight:500;}
+  .sig-buy{background:#ebfbee;color:#2f9e44;}
+  .sig-sell{background:#fff5f5;color:#c92a2a;}
+  .sig-hold{background:#f1f3f5;color:#495057;}
+  .sprice{text-align:right;}
+  .sprice .pv{font-size:13px;font-weight:600;color:#1a1a1a;}
+  .sprice .pd{font-size:11px;margin-top:2px;}
+  .chart-wrap{margin:6px 0 2px;height:44px;}
+  canvas.sparkline{width:100%;height:44px;}
+  .news-item{padding:10px 0;border-bottom:1px solid #f0f0f0;}
+  .news-item:last-child{border-bottom:none;}
+  .ntag{font-size:10px;padding:2px 7px;border-radius:20px;display:inline-block;margin-bottom:4px;font-weight:500;}
+  .ntext{font-size:13px;color:#1a1a1a;line-height:1.5;}
+  .ntime{font-size:11px;color:#aaa;margin-top:2px;}
+  .ai-box{background:#f0f4ff;border-radius:14px;padding:1rem 1.25rem;margin-bottom:1rem;border-left:3px solid #4263eb;}
+  .ai-lbl{font-size:11px;color:#4263eb;font-weight:600;margin-bottom:5px;}
+  .ai-txt{font-size:13px;color:#1a1a1a;line-height:1.7;}
+  .refresh-btn{width:100%;padding:13px;background:#4263eb;border:none;border-radius:12px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .refresh-btn:hover{background:#3451c7;}
+  .refresh-btn:disabled{background:#aaa;}
+  .spinner{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .inp-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0;}
+  .inp-row:last-of-type{border-bottom:none;}
+  .inp-row label{font-size:12px;color:#555;width:76px;flex-shrink:0;}
+  .inp-row input{flex:1;font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#fafafa;color:#1a1a1a;}
+  .inp-row .itag{font-size:11px;color:#aaa;width:16px;}
+  .calc-btn{width:100%;margin-top:12px;padding:11px;background:#fff;border:1px solid #ddd;border-radius:10px;font-size:13px;font-weight:600;color:#1a1a1a;cursor:pointer;}
+  .calc-btn:hover{background:#f5f5f5;}
+  .result-box{margin-top:12px;padding:14px;background:#f8f9fa;border-radius:10px;font-size:13px;color:#1a1a1a;line-height:1.8;display:none;}
+  .pf-metric{background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:10px 12px;}
+  .pf-metric .pm-l{font-size:11px;color:#888;}
+  .pf-metric .pm-v{font-size:17px;font-weight:600;margin-top:3px;}
+  .pf-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+  .pf-bar-wrap{flex:1;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;}
+  .pf-bar{height:100%;border-radius:3px;}
+  .pf-row{display:flex;align-items:center;gap:8px;padding:5px 0;}
+  .send-btn{width:100%;padding:11px;border:1px solid #ddd;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#1a1a1a;margin-bottom:8px;}
+  .send-btn.kakao{background:#FAE100;color:#3A1D1D;border-color:#FAE100;}
+  .send-btn.telegram{background:#e8f0fe;color:#1a56db;border-color:#c3d2f5;}
+  .send-info{font-size:12px;color:#666;text-align:center;padding:8px;line-height:1.6;}
+  .alert-row{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap;}
+  .alert-row label{font-size:12px;color:#555;width:72px;flex-shrink:0;}
+  .alert-row input{width:64px;font-size:12px;padding:5px 8px;border:1px solid #ddd;border-radius:8px;}
+  .alert-row span{font-size:11px;color:#aaa;}
+  .empty-msg{font-size:13px;color:#aaa;padding:14px 0;}
+  .copy-info{font-size:12px;color:#2f9e44;text-align:center;padding:6px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div>
+      <h1>토니킹님의 주식 브리핑</h1>
+      <p id="today-date">날짜 로딩 중...</p>
+    </div>
+    <div class="time-badge">오전 7:30 브리핑</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('briefing')">오늘 브리핑</button>
+    <button class="tab" onclick="switchTab('portfolio')">포트폴리오</button>
+    <button class="tab" onclick="switchTab('alert')">알림 설정</button>
+  </div>
+
+  <!-- 브리핑 탭 -->
+  <div class="panel active" id="panel-briefing">
+    <div class="sec-label">국내 시장</div>
+    <div class="market-row" style="margin-bottom:1rem;">
+      <div class="mcard"><div class="ml">코스피선물</div><div class="mv" id="kospi">—</div><div class="mc" id="kospi-c">—</div></div>
+      <div class="mcard"><div class="ml">원/달러</div><div class="mv" id="usd">—</div><div class="mc" id="usd-c">—</div></div>
+      <div class="mcard"><div class="ml">WTI 유가</div><div class="mv" id="oil">—</div><div class="mc" id="oil-c">—</div></div>
+    </div>
+    <div class="sec-label">미국 시장</div>
+    <div class="market-row">
+      <div class="mcard"><div class="ml">나스닥</div><div class="mv" id="nasdaq">—</div><div class="mc" id="nasdaq-c">—</div></div>
+      <div class="mcard"><div class="ml">S&amp;P 500</div><div class="mv" id="sp500">—</div><div class="mc" id="sp500-c">—</div></div>
+      <div class="mcard"><div class="ml">다우존스</div><div class="mv" id="dow">—</div><div class="mc" id="dow-c">—</div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-label">내 보유 종목</div>
+      <div id="stock-list"><div class="empty-msg">브리핑 버튼을 눌러주세요.</div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-label">오늘의 주요 뉴스</div>
+      <div id="news-list"><div class="empty-msg">뉴스 대기 중...</div></div>
+    </div>
+    <div class="ai-box">
+      <div class="ai-lbl">AI 오늘의 브리핑 코멘트</div>
+      <div class="ai-txt" id="ai-comment">아래 버튼을 눌러 오늘의 브리핑을 받아보세요.</div>
+    </div>
+    <button class="refresh-btn" id="refresh-btn" onclick="loadBriefing()">
+      <div class="spinner" id="spinner"></div>
+      <span id="btn-text">오늘 브리핑 받기</span>
+    </button>
+  </div>
+
+  <!-- 포트폴리오 탭 -->
+  <div class="panel" id="panel-portfolio">
+    <div class="sec">
+      <div class="sec-label">수익률 계산기</div>
+      <div class="inp-row"><label>와이지원</label><input type="number" placeholder="매수단가" id="p0-buy"><input type="number" placeholder="수량" id="p0-qty"><div class="itag">주</div></div>
+      <div class="inp-row"><label>에코프로</label><input type="number" placeholder="매수단가" id="p1-buy"><input type="number" placeholder="수량" id="p1-qty"><div class="itag">주</div></div>
+      <div class="inp-row"><label>미래에셋</label><input type="number" placeholder="매수단가" id="p2-buy"><input type="number" placeholder="수량" id="p2-qty"><div class="itag">주</div></div>
+      <div class="inp-row"><label>한화시스템</label><input type="number" placeholder="매수단가" id="p3-buy"><input type="number" placeholder="수량" id="p3-qty"><div class="itag">주</div></div>
+      <div class="inp-row"><label>대덕전자</label><input type="number" placeholder="매수단가" id="p4-buy"><input type="number" placeholder="수량" id="p4-qty"><div class="itag">주</div></div>
+      <button class="calc-btn" onclick="calcPortfolio()">수익률 계산하기</button>
+      <div class="result-box" id="pf-result"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-label">종목별 비중</div>
+      <div id="pf-chart"><div class="empty-msg">수익률 계산 후 비중이 표시됩니다.</div></div>
+    </div>
+  </div>
+
+  <!-- 알림 설정 탭 -->
+  <div class="panel" id="panel-alert">
+    <div class="sec">
+      <div class="sec-label">자동 발송 설정</div>
+      <p style="font-size:13px;color:#666;line-height:1.7;margin-bottom:14px;">매일 오전 7:30 브리핑을 받을 방법을 선택하세요.</p>
+      <button class="send-btn kakao" onclick="setupKakao()">카카오톡 연동 안내</button>
+      <button class="send-btn telegram" onclick="setupTelegram()">텔레그램 연동 안내 (추천)</button>
+      <div class="send-info" id="send-info">연동 방법을 선택하면 안내가 표시됩니다.</div>
+    </div>
+    <div class="sec">
+      <div class="sec-label">등락률 알림 기준</div>
+      <div id="alert-list"></div>
+      <button class="calc-btn" onclick="saveAlerts()" style="margin-top:12px;">알림 기준 저장</button>
+      <div class="send-info" id="alert-info"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-label">브리핑 텍스트 복사</div>
+      <p style="font-size:12px;color:#888;margin-bottom:10px;">브리핑 내용을 복사해서 카카오톡에 직접 붙여넣기 할 수 있어요.</p>
+      <button class="send-btn" onclick="previewSend()">브리핑 텍스트 복사하기</button>
+      <div class="copy-info" id="copy-info"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const stocks=[
+  {name:"와이지원",code:"122310",bg:"#e8f4fd",tc:"#1864ab"},
+  {name:"에코프로",code:"086520",bg:"#ebfbee",tc:"#2f9e44"},
+  {name:"미래에셋증권",code:"006800",bg:"#fff9db",tc:"#e67700"},
+  {name:"한화시스템",code:"272210",bg:"#fff0f6",tc:"#c2255c"},
+  {name:"대덕전자",code:"353200",bg:"#f3f0ff",tc:"#6741d9"}
+];
+const barColors=["#339af0","#51cf66","#fcc419","#f783ac","#9775fa"];
+let lastParsed=null;
+
+function switchTab(t){
+  const ids=["briefing","portfolio","alert"];
+  document.querySelectorAll(".tab").forEach((el,i)=>el.classList.toggle("active",ids[i]===t));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  document.getElementById("panel-"+t).classList.add("active");
+}
+
+function setDate(){
+  const d=new Date();
+  const days=["일","월","화","수","목","금","토"];
+  document.getElementById("today-date").textContent=
+    `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+}
+
+function drawSparkline(id,data,isUp){
+  const c=document.getElementById(id);
+  if(!c)return;
+  const ctx=c.getContext("2d");
+  c.width=c.parentElement.offsetWidth||200;c.height=44;
+  const w=c.width,h=c.height,mn=Math.min(...data),mx=Math.max(...data),range=mx-mn||1;
+  ctx.clearRect(0,0,w,h);
+  ctx.beginPath();
+  data.forEach((v,i)=>{
+    const x=i/(data.length-1)*w,y=h-(v-mn)/range*(h-8)-4;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle=isUp?"#e03131":"#1971c2";ctx.lineWidth=1.5;ctx.stroke();
+  ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();
+  ctx.fillStyle=isUp?"rgba(224,49,49,0.07)":"rgba(25,113,194,0.07)";ctx.fill();
+}
+
+function genSpark(isUp){
+  let v=100;
+  return Array.from({length:20},()=>{v+=(Math.random()-.48)*(isUp?1.2:1);return v;});
+}
+
+async function loadBriefing(){
+  const btn=document.getElementById("refresh-btn");
+  const sp=document.getElementById("spinner");
+  const bt=document.getElementById("btn-text");
+  btn.disabled=true;sp.style.display="block";bt.textContent="AI 브리핑 생성 중...";
+  document.getElementById("ai-comment").textContent="분석 중...";
+  const today=new Date().toLocaleDateString("ko-KR");
+  const snames=stocks.map(s=>s.name).join(", ");
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-20250514",
+        max_tokens:1000,
+        tools:[{type:"web_search_20250305",name:"web_search"}],
+        system:`한국 주식 브리핑 전문가. 오늘:${today}. JSON만 반환. 백틱없이.
+형식:{"kospi":"숫자","kospi_chg":"등락%","usd":"숫자","usd_chg":"등락원","oil":"숫자","oil_chg":"등락%","nasdaq":"숫자","nasdaq_chg":"등락%","sp500":"숫자","sp500_chg":"등락%","dow":"숫자","dow_chg":"등락%","stocks":[{"name":"종목명","price":"숫자","chg":"등락%","signal":"buy|sell|hold","news":"한줄뉴스"}],"ai_comment":"2-3문장브리핑","top_news":[{"tag":"종목명","text":"뉴스제목","time":"X시간전"}]}`,
+        messages:[{role:"user",content:`${today} 기준 검색 후 JSON반환: 1.코스피200선물,원달러,WTI유가 2.나스닥,SP500,다우 3.종목주가+뉴스+매수매도신호:${snames} 4.오늘투자브리핑`}]
+      })
+    });
+    const data=await res.json();
+    const txt=data.content.map(c=>c.type==="text"?c.text:"").join("");
+    const p=JSON.parse(txt.replace(/```json|```/g,"").trim());
+    lastParsed=p;
+
+    function setM(id,val,chg,pre="",suf=""){
+      document.getElementById(id).textContent=pre+(val||"—")+suf;
+      const el=document.getElementById(id+"-c");
+      if(el){el.textContent=chg||"—";el.className="mc "+(String(chg).startsWith("+")?"up":"dn");}
+    }
+    setM("kospi",p.kospi,p.kospi_chg);
+    setM("usd",p.usd,p.usd_chg,"","원");
+    setM("oil",p.oil,p.oil_chg,"$");
+    setM("nasdaq",p.nasdaq,p.nasdaq_chg);
+    setM("sp500",p.sp500,p.sp500_chg);
+    setM("dow",p.dow,p.dow_chg);
+
+    if(p.stocks&&p.stocks.length){
+      document.getElementById("stock-list").innerHTML=p.stocks.map((s,i)=>{
+        const st=stocks[i]||stocks[0];
+        const isUp=String(s.chg).startsWith("+");
+        const sigCls=s.signal==="buy"?"sig-buy":s.signal==="sell"?"sig-sell":"sig-hold";
+        const sigTxt=s.signal==="buy"?"매수추천":s.signal==="sell"?"매도주의":"관망";
+        return `<div class="stock-item">
+          <div class="sicon" style="background:${st.bg};color:${st.tc};">${s.name[0]}</div>
+          <div class="sname">
+            <div class="kn">${s.name}<span class="signal ${sigCls}">${sigTxt}</span></div>
+            <div class="sc">${st.code} · ${s.news||""}</div>
+            <div class="chart-wrap"><canvas class="sparkline" id="spark-${i}"></canvas></div>
+          </div>
+          <div class="sprice">
+            <div class="pv">${s.price?Number(s.price).toLocaleString()+"원":"—"}</div>
+            <div class="pd ${isUp?"up":"dn"}">${s.chg||"—"}</div>
+          </div>
+        </div>`;
+      }).join("");
+      setTimeout(()=>p.stocks.forEach((_,i)=>{
+        const isUp=String(p.stocks[i].chg).startsWith("+");
+        drawSparkline(`spark-${i}`,genSpark(isUp),isUp);
+      }),100);
+    }
+    if(p.top_news&&p.top_news.length){
+      document.getElementById("news-list").innerHTML=p.top_news.map((n,i)=>{
+        const st=stocks[i%5];
+        return `<div class="news-item">
+          <span class="ntag" style="background:${st.bg};color:${st.tc};">${n.tag}</span>
+          <div class="ntext">${n.text}</div>
+          <div class="ntime">${n.time}</div>
+        </div>`;
+      }).join("");
+    }
+    document.getElementById("ai-comment").textContent=p.ai_comment||"브리핑 완료.";
+  }catch(e){
+    document.getElementById("ai-comment").textContent="오류 발생. 다시 시도해 주세요.";
+  }
+  btn.disabled=false;sp.style.display="none";bt.textContent="새로고침";
+}
+
+function calcPortfolio(){
+  const prices=lastParsed&&lastParsed.stocks?lastParsed.stocks.map(s=>Number(s.price)||0):[0,0,0,0,0];
+  let totalBuy=0,totalNow=0;
+  const items=stocks.map((s,i)=>{
+    const buy=Number(document.getElementById(`p${i}-buy`).value)||0;
+    const qty=Number(document.getElementById(`p${i}-qty`).value)||0;
+    const now=prices[i]||buy;
+    const buyAmt=buy*qty,nowAmt=now*qty;
+    totalBuy+=buyAmt;totalNow+=nowAmt;
+    return {name:s.name,buy,qty,now,buyAmt,nowAmt,pnl:nowAmt-buyAmt,pnlPct:buy>0?(now-buy)/buy*100:0};
+  });
+  if(totalBuy===0){
+    const r=document.getElementById("pf-result");
+    r.style.display="block";r.textContent="매수단가와 수량을 입력해 주세요.";return;
+  }
+  const totalPnl=totalNow-totalBuy,totalPct=totalBuy>0?totalPnl/totalBuy*100:0;
+  document.getElementById("pf-result").style.display="block";
+  document.getElementById("pf-result").innerHTML=`
+    <div class="pf-grid">
+      <div class="pf-metric"><div class="pm-l">총 매수금액</div><div class="pm-v" style="font-size:15px;">${Math.round(totalBuy).toLocaleString()}원</div></div>
+      <div class="pf-metric"><div class="pm-l">총 평가금액</div><div class="pm-v" style="font-size:15px;">${Math.round(totalNow).toLocaleString()}원</div></div>
+      <div class="pf-metric"><div class="pm-l">총 손익</div><div class="pm-v ${totalPnl>=0?"up":"dn"}">${totalPnl>=0?"+":""}${Math.round(totalPnl).toLocaleString()}원</div></div>
+      <div class="pf-metric"><div class="pm-l">수익률</div><div class="pm-v ${totalPct>=0?"up":"dn"}">${totalPct>=0?"+":""}${totalPct.toFixed(2)}%</div></div>
+    </div>
+    ${items.filter(it=>it.buyAmt>0).map(it=>`<div style="font-size:12px;color:#666;padding:3px 0;">${it.name}: ${it.pnl>=0?"+":""}${Math.round(it.pnl).toLocaleString()}원 (${it.pnlPct>=0?"+":""}${it.pnlPct.toFixed(1)}%)</div>`).join("")}
+  `;
+  const chartItems=items.filter(it=>it.buyAmt>0);
+  if(chartItems.length){
+    document.getElementById("pf-chart").innerHTML=chartItems.map((it,i)=>{
+      const pct=(it.buyAmt/totalBuy*100).toFixed(1);
+      return `<div class="pf-row">
+        <div style="font-size:12px;color:#555;width:72px;">${it.name}</div>
+        <div class="pf-bar-wrap"><div class="pf-bar" style="width:${pct}%;background:${barColors[i]};"></div></div>
+        <div style="font-size:12px;font-weight:600;width:38px;text-align:right;">${pct}%</div>
+      </div>`;
+    }).join("");
+  }
+}
+
+function buildAlertList(){
+  document.getElementById("alert-list").innerHTML=stocks.map((s,i)=>`
+    <div class="alert-row">
+      <label>${s.name}</label>
+      <input type="number" placeholder="하락%" id="al${i}-dn">
+      <span>% 하락 시</span>
+      <input type="number" placeholder="상승%" id="al${i}-up">
+      <span>% 상승 시</span>
+    </div>
+  `).join("");
+}
+
+function saveAlerts(){
+  document.getElementById("alert-info").textContent="알림 기준이 저장되었습니다! 텔레그램 연동 후 자동 발송됩니다.";
+}
+
+function setupKakao(){
+  document.getElementById("send-info").innerHTML=`📱 카카오톡 나에게 보내기 설정:<br>1. developers.kakao.com 가입<br>2. 앱 생성 후 REST API 키 발급<br>3. 개발자에게 키 전달 시 자동 설정 가능<br><br>💡 텔레그램이 훨씬 더 간편해요!`;
+}
+
+function setupTelegram(){
+  document.getElementById("send-info").innerHTML=`✈️ 텔레그램 봇 연동 (무료·추천):<br>1. 텔레그램 앱 설치<br>2. @BotFather 검색 → /newbot<br>3. 봇 이름 설정 → 토큰 발급<br>4. 봇에게 메시지 한번 보내기<br>5. 토큰+아이디 알려주시면 자동 발송 설정 완료!`;
+}
+
+function previewSend(){
+  if(!lastParsed){document.getElementById("copy-info").textContent="먼저 브리핑을 불러와 주세요!";return;}
+  const p=lastParsed;
+  const txt=`[토니킹 주식 브리핑 ${new Date().toLocaleDateString("ko-KR")}]\n\n📊 국내시장\n코스피선물: ${p.kospi} ${p.kospi_chg}\n원달러: ${p.usd}원 ${p.usd_chg}\nWTI: $${p.oil} ${p.oil_chg}\n\n🌏 미국시장\n나스닥: ${p.nasdaq} ${p.nasdaq_chg}\nS&P500: ${p.sp500} ${p.sp500_chg}\n다우: ${p.dow} ${p.dow_chg}\n\n📈 보유종목\n${(p.stocks||[]).map(s=>`${s.name}: ${Number(s.price).toLocaleString()}원 ${s.chg}`).join("\n")}\n\n💬 ${p.ai_comment}`;
+  navigator.clipboard.writeText(txt).then(()=>{
+    document.getElementById("copy-info").textContent="✅ 복사 완료! 카카오톡에 붙여넣기 하세요.";
+  }).catch(()=>{
+    document.getElementById("copy-info").textContent="복사 실패. 브라우저 권한을 확인해 주세요.";
+  });
+}
+
+setDate();
+buildAlertList();
+</script>
+</body>
+</html>
