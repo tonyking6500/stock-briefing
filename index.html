@@ -225,7 +225,7 @@ async function loadBriefing(){
   const today=new Date().toLocaleDateString("ko-KR");
   const snames=stocks.map(s=>s.name).join(", ");
   try{
-    const res = await fetch("/.netlify/functions/briefing", {
+    const res = await fetch("/.netlify/functions/briefing-background", {
       method:"POST",
       headers:{"Content-Type":"application/json","x-api-key":"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","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
       body:JSON.stringify({
